@@ -1,3 +1,5 @@
+const readline = require('readline');
+
 /**
  * Busca resultados históricos da Lotofácil via API ou dados locais
  * @returns {Promise<Object[]>} Array de resultados
@@ -94,11 +96,25 @@ function calculateNumberScore(number, frequency, delay) {
 }
 
 /**
+ * Determina a faixa de um número
+ * @param {number} num - Número
+ * @returns {string} Faixa correspondente
+ */
+function getRange(num) {
+    if (num <= 5) return "1-5";
+    if (num <= 10) return "6-10";
+    if (num <= 15) return "11-15";
+    if (num <= 20) return "16-20";
+    return "21-25";
+}
+
+/**
  * Gera um jogo otimizado com base em métricas estatísticas
  * @param {Object} metrics - Métricas históricas
+ * @param {number} size - Número de dezenas desejadas (15 a 20)
  * @returns {number[]} Jogo gerado
  */
-function generateOptimizedGame({ frequency, delay, sequences, evenOddCombinations }) {
+function generateOptimizedGame({ frequency, delay, sequences, evenOddCombinations }, size) {
     const availableNumbers = Array.from({ length: 25 }, (_, i) => i + 1);
     const scores = Object.fromEntries(availableNumbers.map(n => [n, calculateNumberScore(n, frequency, delay)]));
     const sortedNumbers = availableNumbers.sort((a, b) => scores[b] - scores[a]);
@@ -119,36 +135,23 @@ function generateOptimizedGame({ frequency, delay, sequences, evenOddCombination
 
     for (const num of sortedNumbers) {
         if (game.includes(num)) continue;
-        if (num % 2 === 0 && evensCount >= idealRatio.evens) continue;
-        if (num % 2 !== 0 && oddsCount >= idealRatio.odds) continue;
+        if (num % 2 === 0 && evensCount >= Math.ceil(idealRatio.evens * (size / 15))) continue;
+        if (num % 2 !== 0 && oddsCount >= Math.ceil(idealRatio.odds * (size / 15))) continue;
         const range = getRange(num);
-        if (rangeCount[range] >= 5) continue;
+        if (rangeCount[range] >= Math.ceil(size / 5)) continue;
 
         game.push(num);
         num % 2 === 0 ? evensCount++ : oddsCount++;
         rangeCount[range]++;
-        if (game.length >= 20) break;
+        if (game.length >= size) break;
     }
 
-    while (game.length < 20) {
+    while (game.length < size) {
         const nextNum = sortedNumbers.find(n => !game.includes(n));
         if (nextNum) game.push(nextNum);
     }
 
     return game.sort((a, b) => a - b);
-}
-
-/**
- * Determina a faixa de um número
- * @param {number} num - Número
- * @returns {string} Faixa correspondente
- */
-function getRange(num) {
-    if (num <= 5) return "1-5";
-    if (num <= 10) return "6-10";
-    if (num <= 15) return "11-15";
-    if (num <= 20) return "16-20";
-    return "21-25";
 }
 
 /**
@@ -185,17 +188,43 @@ function analyzeGame(game, { frequency, delay, sequences }) {
 }
 
 /**
+ * Solicita ao usuário o número de dezenas via CLI
+ * @returns {Promise<number>} Número de dezenas escolhidas
+ */
+function askGameSize() {
+    const rl = readline.createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+
+    return new Promise((resolve) => {
+        rl.question('Quantas dezenas você quer no jogo? (15 a 20): ', (answer) => {
+            const size = parseInt(answer);
+            if (isNaN(size) || size < 15 || size > 20) {
+                console.log('Por favor, insira um número válido entre 15 e 20.');
+                rl.close();
+                resolve(askGameSize()); // Recursão para nova tentativa
+            } else {
+                rl.close();
+                resolve(size);
+            }
+        });
+    });
+}
+
+/**
  * Executa o fluxo principal e exibe resultados
  */
 async function main() {
     const results = await fetchLotofacilResults();
     const metrics = analyzeHistoricalResults(results);
 
-    const games = Array.from({ length: 10 }, () => generateOptimizedGame(metrics));
+    const gameSize = await askGameSize();
+    const games = Array.from({ length: 10 }, () => generateOptimizedGame(metrics, gameSize));
     const analyzedGames = games.map(game => analyzeGame(game, metrics));
     const bestGame = analyzedGames.sort((a, b) => b.avgScore - a.avgScore)[0];
 
-    console.log("JOGO RECOMENDADO:");
+    console.log(`\nJOGO RECOMENDADO (${gameSize} DEZENAS):`);
     console.log(bestGame.game.join(', '));
     console.log("\nESTATÍSTICAS:");
     console.log(`- Pares: ${bestGame.evens}`);
@@ -204,6 +233,7 @@ async function main() {
     console.log(`- Sequências: ${bestGame.sequenceCount}`);
     console.log(`- Quentes: ${bestGame.hotNumbers}`);
     console.log(`- Frios: ${bestGame.coldNumbers}`);
+    console.log(`- Pontuação média: ${bestGame.avgScore.toFixed(4)}`);
 }
 
 main().catch(console.error);

@@ -36,16 +36,19 @@ Exibe o jogo recomendado com suas estatísticas detalhadas.
 Exemplo de saída:
 
 ```text
-JOGO RECOMENDADO:
-1, 2, 3, 5, 7, 8, 10, 11, 13, 14, 15, 17, 18, 19, 20, 21, 22, 23, 24, 25
+Quantas dezenas você quer no jogo? (15 a 20): 16
+
+JOGO RECOMENDADO (16 DEZENAS):
+1, 2, 3, 5, 7, 8, 10, 11, 13, 14, 15, 17, 19, 21, 23, 25
 
 ESTATÍSTICAS:
-- Pares: 10
-- Ímpares: 10
-- Faixas: { '1-5': 4, '6-10': 4, '11-15': 4, '16-20': 4, '21-25': 4 }
+- Pares: 8
+- Ímpares: 8
+- Faixas: { '1-5': 4, '6-10': 3, '11-15': 4, '16-20': 2, '21-25': 3 }
 - Sequências: 1
-- Quentes: 8
-- Frios: 3
+- Quentes: 6
+- Frios: 2
+- Pontuação média: 0.7234
 ```
 
 ## Estrutura do Código
