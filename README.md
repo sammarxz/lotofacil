@@ -85,7 +85,7 @@ Contribuições são bem-vindas! Siga os passos abaixo:
 * A função de dados locais (`loadLocalData`) precisa ser implementada conforme a necessidade.
 
 ## Licença
-Este projeto está licenciado sob a .
+Este projeto está licenciado sob a [GNU GPLv3](https://github.com/sammarxz/lotofacil/blob/main/LICENSE).
 
 ## Agradecimentos
 À comunidade open-source por APIs e ferramentas úteis.
